@@ -30,7 +30,7 @@ I use low threshold [200, 200, 0] and high threshold [255, 255, 255] which cover
 ##### 2. I convert the image to gray image, using helper function grayscale(). 
 ##### 3. I apply the gaussian_blur() helper function, using kernal size 13. In the test, I found this doesn't change result a lot.
 ##### 4. I apply canny edge detection using low threshold 50 and high threshold 150 suggested in the class.
-##### 5. I select region that lane lane usually appeared. In real scenario, camera usually mounted in a fixed position. So this is a valid assumption that lane lane appears in certain area. In my case, I picked a trapezium region as: 
+##### 5. I select region that lane lane usually appeared. In real scenario, camera usually mounted in a fixed position and road is flat. So this is a valid assumption that lane lane appears only in certain area. In my case, I picked a trapezium region as: 
 ```python
     rows, cols = image.shape[:2]
     bottom_left  = [cols*0.1, rows*0.9]
@@ -39,7 +39,7 @@ I use low threshold [200, 200, 0] and high threshold [255, 255, 255] which cover
     top_right    = [cols*0.6, rows*0.6]
 ```
 ##### 6.I call hough_lines with tuned parameters: rto 1, theta=np.pi/180, threshold=20, min_line_len=20, max_line_gap=200. 
-In order to draw a single line on the left and right lanes, I modified the draw_lines() function by approximating the left and right lane as two straight line. First I split the lines returned by hough_lines() function into two sets, left and right lines.  For each set, I use fitLine() find the best approximation of line points. The result returned by fitLine() is vector and a point. Which can be used to calculate the slope and intercept. Once I get the left line and right line, I will draw two lines from y1 to y2. Which is the lowest and highest possible depth in the images. Again I make assumption that camera is fixed and road is flat. Here is the example code: 
+In order to draw a single line on the left and right lanes, I modified the draw_lines() function by approximating the left and right lane as two straight line. First I split the lines returned by hough_lines() function into two sets, left and right lines based on the slope.  For each set, I use fitLine() find the best approximation of line points. The result returned by fitLine() is vector and a point. Which can be used to calculate the line slope and intercept. Once I get the left line and right line, I will draw two lines from y1 to y2. Which is the lowest and highest possible height in the images. Again I make assumption that camera is fixed and road is flat. Here is the example code: 
 
 ```python
 def split_lane(img, lines):
@@ -99,15 +99,14 @@ A few corner case to catch during my testing with videos.  One is line slope cou
 A few shortcomings in my solution: 
 1. I use straight lines to approximate the left lane and right lane. This is most likely not true, as road may be curved. 
 2. I define the region based on assumption that the camera is fixed and the road is flat. 
-3. More parameter tunning is required to find out best of most scenarios.
+3. More parameter tunning is required to find out the best for the most scenarios.
 4. If the slope changed dramatically in a video frame, this is most likely to be false identified. We should probably filter it out. 
 
 ### 3. Suggest possible improvements to your pipeline
 
 A possible improvement for above shortcomings would be: 
 
-1. Use spline interpolate to make curved line in stead of straight line. I have tried this approach, but it looks hit some boundry errors using opencv as a limitation. Probably I can use some other library.
-2. Use color selection to identify the road area, eg: [0, 0, 0] to [100, 100, 100] to mark the road and find the road line first as the region. This probably will not work for wild road. Another solution is to build 3-D model from two image, so we get depth information and from there to derive the drivable region 
-3. Need to extract some images from video as simple to find better parameters.
+1. Use spline interpolation interp1d() to make curved line in stead of straight line. I have tried this approach, but it looks hit some boundry errors using scipy as a limitation. Probably I can use some other library.
+2. Use color selection to identify the road area, eg: [0, 0, 0] to [100, 100, 100] to mark the road and find the road line first as the region. This probably will not work for wild road. Another solution is to build 3-D model from frames, so we get depth information and from there to derive the drivable region 
+3. Need to extract some images from video as samples to find better parameters.
 4. Smooth out the high frequency slope across the video frames. 
-
